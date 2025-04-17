@@ -1,48 +1,36 @@
 import * as vscode from 'vscode';
 import * as Diff from 'diff';
 import { Snapshot } from './types';
-import { getContentBeforeChange } from './utility';
+import { debugLog, getContentBeforeChange } from './utility';
 
 let snapshots: Snapshot[] = [];
 let recording = false;
 
 let currFile: string | null = null;
-let currInitialContent: string | null = null;
+let currStartContent: string | null = null;
+let currEndContent: string | null = null;
 
-export const getIsRecording = () => recording;
+const takeSnapshot = (): Snapshot => {
+  const oldContent = currStartContent ?? '';
+  const newContent = currEndContent ?? '';
+  const path = vscode.workspace.asRelativePath(currFile ?? '');
 
-export const startRecording = () => {
-  console.log("start recording");
-  recording = true;
-  snapshots = [];
-};
+  const diff = Diff.createPatch(path, oldContent, newContent);
 
-export const stopRecording = (): Snapshot[] => {
-  console.log("stop recording");
-  recording = false;
-  const res = snapshots;
-  snapshots = [];
-  return res;
-};
-
-const finishSnapshot = (event: vscode.TextDocumentChangeEvent): Snapshot => {
-  const newContent = event.document.getText();
-  const oldContent = currInitialContent ?? '';
-  const relativePath = vscode.workspace.asRelativePath(currFile ?? '');
-
-  const diff = Diff.createPatch(relativePath, oldContent, newContent);
   return {
-    file: relativePath,
+    file: path,
     diff: diff,
   };
 };
 
 const startSnapshot = (event: vscode.TextDocumentChangeEvent) => {
-  const beforeChange = getContentBeforeChange(event);
-  const file = event.document.uri.fsPath;
+  currFile = event.document.uri.fsPath;
+  currStartContent = getContentBeforeChange(event);
+  currEndContent = event.document.getText();
+};
 
-  currFile = file;
-  currInitialContent = beforeChange;
+const updateSnapshot = (event: vscode.TextDocumentChangeEvent) => {
+  currEndContent = event.document.getText();
 };
 
 export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
@@ -50,26 +38,48 @@ export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
     return;
   }
 
-  const file = event.document.uri.fsPath;
-  if (file !== currFile) {
-    snapshots.push(finishSnapshot(event));
-    snapshots.push({
-      file: vscode.workspace.asRelativePath(file),
-      diff: '',
-    });
-    snapshots.push({
-      file: vscode.workspace.asRelativePath(file),
-      diff: '',
-    });
-    snapshots.push({
-      file: vscode.workspace.asRelativePath(file),
-      diff: '',
-    });
-    snapshots.push({
-      file: vscode.workspace.asRelativePath(file),
-      diff: '',
-    });
-
-    startSnapshot(event);
+  // Only handle real file documents
+  if (event.document.uri.scheme !== 'file') {
+    return;
   }
+
+  const file = event.document.uri.fsPath;
+  if (!currFile) {
+    debugLog("started editing first file", file);
+    startSnapshot(event);
+  } else if (file !== currFile) {
+    debugLog("file changed to", file, "from", currFile);
+    snapshots.push(takeSnapshot());
+    startSnapshot(event);
+  } else {
+    debugLog("updating snapshot for", file);
+    updateSnapshot(event);
+  }
+};
+
+const flushSnapshot = () => {
+  if (currFile && currStartContent !== currEndContent) {
+    debugLog("flushing snapshot for", currFile);
+    snapshots.push(takeSnapshot());
+    currFile = null;
+    currStartContent = null;
+    currEndContent = null;
+  }
+};
+
+export const getIsRecording = () => recording;
+
+export const startRecording = () => {
+  debugLog("start recording");
+  recording = true;
+  snapshots = [];
+};
+
+export const stopRecording = (): Snapshot[] => {
+  debugLog("stop recording");
+  flushSnapshot();
+  recording = false;
+  const res = snapshots;
+  snapshots = [];
+  return res;
 };

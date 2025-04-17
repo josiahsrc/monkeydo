@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+let channel: vscode.OutputChannel | null = null;
+
 export const getContentBeforeChange = (event: vscode.TextDocumentChangeEvent): string => {
   const document = event.document;
   const changes = event.contentChanges;
@@ -17,4 +19,14 @@ export const getContentBeforeChange = (event: vscode.TextDocumentChangeEvent): s
   }
 
   return currentContent;
+};
+
+export const debugLog = (...entries: unknown[]) => {
+  if (!channel) {
+    channel = vscode.window.createOutputChannel('MonkeyDo');
+  }
+
+  const joined = entries.map((e) => `${e}`).join(' ');
+  const msg = `[${new Date().toLocaleTimeString()}] ${joined}`;
+  channel.appendLine(msg);
 };
