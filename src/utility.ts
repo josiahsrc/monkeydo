@@ -31,25 +31,51 @@ export const debugLog = (...entries: unknown[]) => {
   channel.appendLine(msg);
 };
 
-export const invokeAI = async (prompt: string): Promise<string | null> => {
-  const models = await vscode.lm.selectChatModels({
-    vendor: 'copilot'
-  });
+export class ChatBuilder {
+  private messages: vscode.LanguageModelChatMessage[] = [];
+  private model: vscode.LanguageModelChat;
 
-  debugLog("selected models", models);
-  if (models.length === 0) {
-    return null;
+  constructor(model: vscode.LanguageModelChat) {
+    this.model = model;
   }
 
-  const model = models[0];
-  const messages = [vscode.LanguageModelChatMessage.User(prompt)];
-  const response = await model.sendRequest(messages);
+  static async create(): Promise<ChatBuilder | null> {
+    const models = await vscode.lm.selectChatModels({
+      vendor: 'copilot'
+    });
 
-  let content = '';
-  for await (const chunk of response.text) {
-    content += chunk;
+    if (models.length === 0) {
+      debugLog("No chat models found");
+      return null;
+    }
+
+    return new ChatBuilder(models[0]);
   }
 
-  debugLog("AI response", content);
-  return content;
-};
+  clear(): this {
+    debugLog("clearing chat messages");
+    this.messages = [];
+    return this;
+  }
+
+  push(message: string): this {
+    this.messages.push(vscode.LanguageModelChatMessage.User(message.trim()));
+    debugLog("pushing message", message);
+    return this;
+  }
+
+  async ask(): Promise<string> {
+    debugLog("asking AI with", this.messages.length, "messages");
+    const response = await this.model.sendRequest(this.messages);
+
+    let content = '';
+    for await (const chunk of response.text) {
+      content += chunk;
+    }
+
+    debugLog("AI response", content);
+    this.messages.push(vscode.LanguageModelChatMessage.Assistant(content));
+
+    return content;
+  }
+}

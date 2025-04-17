@@ -24,8 +24,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage('Monkey Do recording stopped!');
     const saveUri = await vscode.window.showSaveDialog({
       title: 'Save Monkey Do action log',
-      defaultUri: vscode.Uri.file(path.join((vscode.workspace.workspaceFolders?.[0].uri.fsPath || ''), `monkeydo-actions-${Date.now()}.log`)),
-      filters: { 'Log Files': ['log'], 'All Files': ['*'] }
+      defaultUri: vscode.Uri.file(path.join((vscode.workspace.workspaceFolders?.[0].uri.fsPath || ''), `monkeydo-actions-${Date.now()}.md`)),
+      filters: { 'Markdown Files': ['md'], 'All Files': ['*'] }
     });
     if (saveUri) {
       fs.writeFileSync(saveUri.fsPath, content);
