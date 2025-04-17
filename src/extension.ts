@@ -3,16 +3,38 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as Diff from 'diff';
 
 const logs: string[] = [];
 let recording = false;
-const LOG_FILE = path.join(__dirname, 'monkeydo-actions.log');
+
+let currentFile: string | undefined = undefined;
+let beforeContent: string | undefined = undefined;
+let afterContent: string | undefined = undefined;
+
+async function getFileContent(filePath: string): Promise<string> {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch {
+    return '';
+  }
+}
+
+async function handleFileSwitch(newFile: string | undefined) {
+  if (currentFile && beforeContent !== undefined) {
+    // Get after content
+    afterContent = await getFileContent(currentFile);
+    if (beforeContent !== afterContent) {
+      const diff = Diff.createPatch(currentFile, beforeContent, afterContent);
+      logAction(`Diff for ${currentFile}:\n${diff}`);
+    }
+  }
+  currentFile = newFile;
+  beforeContent = newFile ? await getFileContent(newFile) : undefined;
+  afterContent = undefined;
+}
 
 function logAction(action: string) {
-  // Prevent logging actions on the log file itself
-  if (action.includes('monkeydo-actions.log')) {
-    return;
-  }
   const timestamp = new Date().toISOString();
   const entry = `[${timestamp}] ${action}\n`;
   logs.push(entry);
@@ -30,7 +52,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(vscode.commands.registerCommand('monkeydo.stopRecording', async () => {
     recording = false;
-    vscode.window.showInformationMessage('MonkeyDo recording stopped!');
+    // On stop, flush last file diff
+    await handleFileSwitch(undefined);
+    vscode.window.showInformationMessage('Monkey Do recording stopped!');
     if (logs.length > 0) {
       const saveUri = await vscode.window.showSaveDialog({
         title: 'Save Monkey Do action log',
@@ -62,16 +86,27 @@ export function activate(context: vscode.ExtensionContext) {
     });
   }
 
-  // Listen for text document changes (captures per-keystroke edits as grouped by VS Code)
-  const textChangeDisposable = vscode.workspace.onDidChangeTextDocument(event => {
-    const file = event.document.uri.fsPath;
-    if (file.endsWith('monkeydo-actions.log')) { return; } // Ignore log file
-    for (const change of event.contentChanges) {
-      const changeType = change.text.length === 0 ? 'deletion' : (change.rangeLength === 0 ? 'insertion' : 'edit');
-      logAction(`Text ${changeType} in ${file} at [${change.range.start.line},${change.range.start.character}] - [${change.range.end.line},${change.range.end.character}]: '${change.text.replace(/\n/g, '\\n')}'`);
+  vscode.window.onDidChangeActiveTextEditor(async (editor) => {
+    if (!recording) {
+      return;
+    }
+
+    const newFile = editor?.document.uri.fsPath;
+    if (newFile !== currentFile) {
+      await handleFileSwitch(newFile);
     }
   });
-  context.subscriptions.push(textChangeDisposable);
+
+  context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(async (event) => {
+    if (!recording) {
+      return;
+    }
+
+    const file = event.document.uri.fsPath;
+    if (file !== currentFile) {
+      await handleFileSwitch(file);
+    }
+  }));
 }
 
 // This method is called when your extension is deactivated
