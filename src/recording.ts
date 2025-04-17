@@ -52,7 +52,6 @@ export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
     snapshots.push(takeSnapshot());
     startSnapshot(event);
   } else {
-    debugLog("updating snapshot for", file);
     updateSnapshot(event);
   }
 };

@@ -30,3 +30,26 @@ export const debugLog = (...entries: unknown[]) => {
   const msg = `[${new Date().toLocaleTimeString()}] ${joined}`;
   channel.appendLine(msg);
 };
+
+export const invokeAI = async (prompt: string): Promise<string | null> => {
+  const models = await vscode.lm.selectChatModels({
+    vendor: 'copilot'
+  });
+
+  debugLog("selected models", models);
+  if (models.length === 0) {
+    return null;
+  }
+
+  const model = models[0];
+  const messages = [vscode.LanguageModelChatMessage.User(prompt)];
+  const response = await model.sendRequest(messages);
+
+  let content = '';
+  for await (const chunk of response.text) {
+    content += chunk;
+  }
+
+  debugLog("AI response", content);
+  return content;
+};

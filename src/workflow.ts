@@ -1,4 +1,5 @@
 import { Snapshot } from "./types";
+import { invokeAI } from './utility';
 
 type BuildWorkflowContentArgs = {
   snapshots: Snapshot[];
@@ -9,5 +10,13 @@ export const buildWorkflowContent = async ({ snapshots }: BuildWorkflowContentAr
     return null;
   }
 
-  return snapshots.map((e) => e.diff).join('\n');
+  const diffText = snapshots.map((e) => e.diff).join('\n');
+  const prompt = `Summarize the following code diff:\n\n${diffText}`;
+
+  const response = invokeAI(prompt);
+  if (!response) {
+    return null;
+  }
+
+  return response;
 };
