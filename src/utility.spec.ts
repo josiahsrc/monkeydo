@@ -1,8 +1,8 @@
 import { getContentBeforeChange } from './utility';
-import { describe, test, expect } from '@jest/globals';
+import { equal } from "assert";
 
 describe('getContentBeforeChange', () => {
-  test('works for basic case', () => {
+  it('works for basic case', () => {
     const actual = getContentBeforeChange({
       document: {
         getText: () => 'Hello World',
@@ -15,20 +15,21 @@ describe('getContentBeforeChange', () => {
         },
       ],
     } as any);
-    expect(actual).toBe('Hello Universe');
+    // expect(actual).to.equal('Hello Universe');
+    equal(actual, 'Hello Universe');
   });
 
-  test('works for empty change', () => {
+  it('works for empty change', () => {
     const actual = getContentBeforeChange({
       document: {
         getText: () => 'Hello World',
       } as any,
       contentChanges: [],
     } as any);
-    expect(actual).toBe('Hello World');
+    equal(actual, 'Hello World');
   });
 
-  test('works for multiple changes', () => {
+  it('works for multiple changes', () => {
     const actual = getContentBeforeChange({
       document: {
         getText: () => 'Hello World',
@@ -46,6 +47,6 @@ describe('getContentBeforeChange', () => {
         },
       ],
     } as any);
-    expect(actual).toBe('Hi Universe');
+    equal(actual, 'Hi Universe');
   });
 });

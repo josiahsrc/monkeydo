@@ -53,6 +53,23 @@ export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
   const file = event.document.uri.fsPath;
   if (file !== currFile) {
     snapshots.push(finishSnapshot(event));
+    snapshots.push({
+      file: vscode.workspace.asRelativePath(file),
+      diff: '',
+    });
+    snapshots.push({
+      file: vscode.workspace.asRelativePath(file),
+      diff: '',
+    });
+    snapshots.push({
+      file: vscode.workspace.asRelativePath(file),
+      diff: '',
+    });
+    snapshots.push({
+      file: vscode.workspace.asRelativePath(file),
+      diff: '',
+    });
+
     startSnapshot(event);
   }
 };
