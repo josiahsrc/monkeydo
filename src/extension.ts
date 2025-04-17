@@ -4,7 +4,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const LOG_FILE = path.join(vscode.workspace.workspaceFolders?.[0].uri.fsPath || '', 'monkeydo-actions.log');
+const logs: string[] = [];
+let recording = false;
+const LOG_FILE = path.join(__dirname, 'monkeydo-actions.log');
 
 function logAction(action: string) {
   // Prevent logging actions on the log file itself
@@ -13,31 +15,34 @@ function logAction(action: string) {
   }
   const timestamp = new Date().toISOString();
   const entry = `[${timestamp}] ${action}\n`;
-  fs.appendFile(LOG_FILE, entry, err => {
-    if (err) {
-      console.error('Failed to write action log:', err);
-    }
-  });
+  logs.push(entry);
 }
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  console.log('MonkeyDo extension is now active!');
 
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "monkeydo" is now active!');
+  context.subscriptions.push(vscode.commands.registerCommand('monkeydo.startRecording', () => {
+    recording = true;
+    vscode.window.showInformationMessage('MonkeyDo recording started!');
+  }));
 
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand('monkeydo.helloWorld', () => {
-    // The code you place here will be executed every time your command is executed
-    // Display a message box to the user
-    vscode.window.showInformationMessage('Hello World from Monkey Do!');
-  });
-
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(vscode.commands.registerCommand('monkeydo.stopRecording', async () => {
+    recording = false;
+    vscode.window.showInformationMessage('MonkeyDo recording stopped!');
+    if (logs.length > 0) {
+      const saveUri = await vscode.window.showSaveDialog({
+        title: 'Save Monkey Do action log',
+        defaultUri: vscode.Uri.file(path.join((vscode.workspace.workspaceFolders?.[0].uri.fsPath || ''), `monkeydo-actions-${Date.now()}.log`)),
+        filters: { 'Log Files': ['log'], 'All Files': ['*'] }
+      });
+      if (saveUri) {
+        fs.writeFileSync(saveUri.fsPath, logs.join(''));
+        vscode.window.showInformationMessage('Monkey Do action log saved.');
+      }
+    }
+  }));
 
   // File system watcher for all files in the workspace
   const watcher = vscode.workspace.createFileSystemWatcher('**/*');

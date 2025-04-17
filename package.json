@@ -16,8 +16,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "monkeydo.helloWorld",
-        "title": "Hello World"
+        "command": "monkeydo.startRecording",
+        "title": "MonkeyDo: Start Recording"
+      },
+      {
+        "command": "monkeydo.stopRecording",
+        "title": "MonkeyDo: Stop Recording"
       }
     ]
   },
