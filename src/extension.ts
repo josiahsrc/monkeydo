@@ -47,8 +47,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(watcher);
 
   // Listen to terminal commands (shell integration)
-  if ((vscode.window as any).onDidChangeTerminalShellIntegration) {
-    (vscode.window as any).onDidChangeTerminalShellIntegration((e: any) => {
+  if (vscode.window.onDidChangeTerminalShellIntegration) {
+    vscode.window.onDidChangeTerminalShellIntegration((e: any) => {
       if (e.shellIntegration && e.shellIntegration.commands) {
         for (const cmd of e.shellIntegration.commands) {
           logAction(`Terminal command: ${cmd.commandLine.value}`);
