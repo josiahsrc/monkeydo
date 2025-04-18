@@ -14,6 +14,24 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "monkeydo-sidebar",
+          "title": "MonkeyDo",
+          "icon": "resources/monkeydo.svg"
+        }
+      ]
+    },
+    "views": {
+      "monkeydo-sidebar": [
+        {
+          "id": "monkeydoView",
+          "name": "MonkeyDo Panel",
+          "type": "webview"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "monkeydo.startRecording",
