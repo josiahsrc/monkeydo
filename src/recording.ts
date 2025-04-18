@@ -1,14 +1,18 @@
 import * as vscode from 'vscode';
 import * as Diff from 'diff';
+import { BehaviorSubject } from 'rxjs';
 import { Snapshot } from './types';
 import { debugLog, getContentBeforeChange } from './utility';
 
 let snapshots: Snapshot[] = [];
-let recording = false;
 
 let currFile: string | null = null;
 let currStartContent: string | null = null;
 let currEndContent: string | null = null;
+
+const recordingState$ = new BehaviorSubject<boolean>(false);
+export const getIsRecording = () => recordingState$.value;
+export const watchIsRecording = () => recordingState$.asObservable();
 
 const takeSnapshot = (): Snapshot => {
   const oldContent = currStartContent ?? '';
@@ -34,7 +38,7 @@ const updateSnapshot = (event: vscode.TextDocumentChangeEvent) => {
 };
 
 export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
-  if (!recording) {
+  if (!getIsRecording()) {
     return;
   }
 
@@ -66,18 +70,16 @@ const flushSnapshot = () => {
   }
 };
 
-export const getIsRecording = () => recording;
-
 export const startRecording = () => {
   debugLog("start recording");
-  recording = true;
+  recordingState$.next(true);
   snapshots = [];
 };
 
 export const stopRecording = (): Snapshot[] => {
   debugLog("stop recording");
   flushSnapshot();
-  recording = false;
+  recordingState$.next(false);
   const res = snapshots;
   snapshots = [];
   return res;
