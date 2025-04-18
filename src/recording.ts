@@ -4,8 +4,6 @@ import { BehaviorSubject } from 'rxjs';
 import { Snapshot } from './types';
 import { debugLog, getContentBeforeChange } from './utility';
 
-let snapshots: Snapshot[] = [];
-
 let currFile: string | null = null;
 let currStartContent: string | null = null;
 let currEndContent: string | null = null;
@@ -13,6 +11,10 @@ let currEndContent: string | null = null;
 const recordingState$ = new BehaviorSubject<boolean>(false);
 export const getIsRecording = () => recordingState$.value;
 export const watchIsRecording = () => recordingState$.asObservable();
+
+const snapshots$ = new BehaviorSubject<Snapshot[]>([]);
+export const getSnapshots = () => snapshots$.value;
+export const watchSnapshots = () => snapshots$.asObservable();
 
 const takeSnapshot = (): Snapshot => {
   const oldContent = currStartContent ?? '';
@@ -37,6 +39,10 @@ const updateSnapshot = (event: vscode.TextDocumentChangeEvent) => {
   currEndContent = event.document.getText();
 };
 
+const pushSnapshot = (snapshot: Snapshot) => {
+  snapshots$.next([...snapshots$.value, snapshot]);
+};
+
 export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
   if (!getIsRecording()) {
     return;
@@ -53,7 +59,7 @@ export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
     startSnapshot(event);
   } else if (file !== currFile) {
     debugLog("file changed to", file, "from", currFile);
-    snapshots.push(takeSnapshot());
+    pushSnapshot(takeSnapshot());
     startSnapshot(event);
   } else {
     updateSnapshot(event);
@@ -63,7 +69,7 @@ export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
 const flushSnapshot = () => {
   if (currFile && currStartContent !== currEndContent) {
     debugLog("flushing snapshot for", currFile);
-    snapshots.push(takeSnapshot());
+    pushSnapshot(takeSnapshot());
     currFile = null;
     currStartContent = null;
     currEndContent = null;
@@ -73,14 +79,14 @@ const flushSnapshot = () => {
 export const startRecording = () => {
   debugLog("start recording");
   recordingState$.next(true);
-  snapshots = [];
+  snapshots$.next([]);
 };
 
 export const stopRecording = (): Snapshot[] => {
   debugLog("stop recording");
   flushSnapshot();
   recordingState$.next(false);
-  const res = snapshots;
-  snapshots = [];
+  const res = snapshots$.value;
+  snapshots$.next([]);
   return res;
 };
