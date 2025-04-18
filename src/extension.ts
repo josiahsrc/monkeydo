@@ -4,9 +4,14 @@ import * as path from 'path';
 import { handleFileChange, startRecording, stopRecording } from './recording';
 import { buildWorkflowContent } from './workflow';
 import { debugLog } from './utility';
+import { Sidebar } from './sidebar';
 
 export function activate(context: vscode.ExtensionContext) {
   debugLog('MonkeyDo extension is now active!');
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('monkeydoView', new Sidebar(context))
+  );
 
   context.subscriptions.push(vscode.commands.registerCommand('monkeydo.startRecording', () => {
     startRecording();
