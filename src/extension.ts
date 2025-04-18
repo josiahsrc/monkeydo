@@ -4,15 +4,15 @@ import * as path from 'path';
 import { handleFileChange, startRecording, stopRecording } from './recording';
 import { buildWorkflowContent } from './workflow';
 import { debugLog } from './utility';
-import { Sidebar } from './sidebar';
+import { SidebarView } from './views/sidebar.view';
 import { setIsProcessing } from './state';
+import { GetTutorialTool } from './tools/getTutorial.tool';
 
 export function activate(context: vscode.ExtensionContext) {
   debugLog('MonkeyDo extension is now active!');
 
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('monkeydoView', new Sidebar(context))
-  );
+  context.subscriptions.push(vscode.lm.registerTool("monkeydo-getTutorial", new GetTutorialTool()));
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider('monkeydoView', new SidebarView(context)));
 
   context.subscriptions.push(vscode.commands.registerCommand('monkeydo.startRecording', () => {
     startRecording();
@@ -43,6 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(async (event) => {
     handleFileChange(event);
   }));
+
 }
 
 export function deactivate() { }

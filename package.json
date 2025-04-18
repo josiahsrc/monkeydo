@@ -28,6 +28,7 @@
         {
           "id": "monkeydoView",
           "name": "MonkeyDo Panel",
+          "icon": "resources/monkeydo.svg",
           "type": "webview"
         }
       ]
@@ -35,11 +36,35 @@
     "commands": [
       {
         "command": "monkeydo.startRecording",
-        "title": "MonkeyDo: Start Recording"
+        "title": "MonkeyDo: Start recording"
       },
       {
         "command": "monkeydo.stopRecording",
-        "title": "MonkeyDo: Stop Recording"
+        "title": "MonkeyDo: Finish recording"
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "monkeydo-getTutorial",
+        "displayName": "MonkeyDo Get Tutorial",
+        "icon": "resources/monkeydo.svg",
+        "tags": [
+          "monkeydo"
+        ],
+        "toolReferenceName": "monkeydo",
+        "modelDescription": "This tool tells you how to work in this code base and how to make changes according to what the user wants. This tool should be used when the user wants to make changes to the codebase.",
+        "userDescription": "MonkeyDo lets you teach Copilot how to do repetitive tasks in your workspace.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "task": {
+              "type": "string",
+              "description": "A description of the task that the user wants to perform.",
+              "default": ""
+            }
+          }
+        }
       }
     ]
   },
