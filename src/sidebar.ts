@@ -70,84 +70,94 @@ export class Sidebar implements vscode.WebviewViewProvider {
 
     return `
       <style>
-        :root {
-          color-scheme: light dark;
-        }
+      :root {
+        color-scheme: light dark;
+      }
 
-        body {
-          color: var(--vscode-foreground);
-          background-color: var(--vscode-sideBar-background);
-          font-family: var(--vscode-font-family);
-          font-size: var(--vscode-font-size);
-          margin: 0;
-          padding: 10px;
-        }
+      body {
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-sideBar-background);
+        font-family: var(--vscode-font-family);
+        font-size: var(--vscode-font-size);
+        margin: 0;
+      }
 
-        .monkeydo-btn {
-          display: block;
-          width: 100%;
-          margin: 8px 0;
-          padding: 8px;
-          font-size: var(--vscode-font-size);
-          font-family: var(--vscode-font-family);
-          background: var(--vscode-button-background);
-          color: var(--vscode-button-foreground);
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
+      .monkeydo-btn {
+        display: block;
+        width: 100%;
+        padding: 8px;
+        font-size: var(--vscode-font-size);
+        font-family: var(--vscode-font-family);
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
 
-        .monkeydo-btn:hover {
-          background: var(--vscode-button-hoverBackground);
-        }
+      .monkeydo-btn:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
 
-        .monkeydo-summary-list {
-          max-height: 100%;
-          overflow-y: auto;
-          margin-top: 12px;
-          background: var(--vscode-editor-background);
-          border-radius: 6px;
-          padding: 8px;
-        }
+      .monkeydo-header {
+        position: sticky;
+        top: 0;
+        background-color: var(--vscode-sideBar-background);
+        z-index: 10;
+        padding: 10px 0;
+      }
 
-        .monkeydo-summary-item {
-          margin-bottom: 12px;
-          padding-bottom: 8px;
-          border-bottom: 1px solid var(--vscode-editorWidget-border);
-        }
+      .monkeydo-summary-list {
+        max-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        margin-top: 12px;
+        margin-bottom: 12px;
+        background: var(--vscode-editor-background);
+        border-radius: 6px;
+        padding: 8px;
+      }
 
-        .monkeydo-summary-item:last-child {
-          border-bottom: none;
-        }
+      .monkeydo-summary-item {
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--vscode-editorWidget-border);
+      }
 
-        .monkeydo-filename {
-          font-weight: bold;
-          color: var(--vscode-textLink-foreground);
-          display: block;
-          margin-bottom: 2px;
-        }
+      .monkeydo-summary-item:last-child {
+        border-bottom: none;
+      }
 
-        .monkeydo-diff-line {
-          font-family: var(--vscode-editor-font-family, monospace);
-          font-size: var(--vscode-editor-font-size, 13px);
-          white-space: pre;
-          color: var(--vscode-editor-foreground);
-        }
+      .monkeydo-filename {
+        font-weight: bold;
+        color: var(--vscode-textLink-foreground);
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .monkeydo-diff-line {
+        font-family: var(--vscode-editor-font-family, monospace);
+        font-size: var(--vscode-editor-font-size, 13px);
+        white-space: pre;
+        color: var(--vscode-editor-foreground);
+      }
       </style>
 
-      <button class="monkeydo-btn" id="monkeydo-action-btn">
-        ${isRecording ? 'Finish Recording' : 'Start Recording'}
-      </button>
+      <div class="monkeydo-header">
+        <button class="monkeydo-btn" id="monkeydo-action-btn">
+          ${isRecording ? 'Finish Recording' : 'Start Recording'}
+        </button>
+      </div>
 
       ${summaryHtml}
 
       <script>
-        const vscode = acquireVsCodeApi();
-        let isRecording = ${isRecording};
-        const btn = document.getElementById('monkeydo-action-btn');
-        btn.addEventListener('click', () => {
-          vscode.postMessage({ command: isRecording ? 'stop' : 'start' });
-        });
+      const vscode = acquireVsCodeApi();
+      let isRecording = ${isRecording};
+      const btn = document.getElementById('monkeydo-action-btn');
+      btn.addEventListener('click', () => {
+        vscode.postMessage({ command: isRecording ? 'stop' : 'start' });
+      });
       </script>
     `;
   }
