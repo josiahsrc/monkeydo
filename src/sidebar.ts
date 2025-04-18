@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
-import { watchIsRecording, getIsRecording, getSnapshots, watchSnapshots } from './recording';
 import { SubscriptionLike } from 'rxjs';
+import { watchIsRecording, watchSnapshots, getIsRecording, getSnapshots, watchIsProcessing, getIsProcessing } from './state';
 
 export class Sidebar implements vscode.WebviewViewProvider {
   private _context: vscode.ExtensionContext;
   private _view?: vscode.WebviewView;
   private _recordingSubscription?: SubscriptionLike;
   private _snapshotsSubscription?: SubscriptionLike;
+  private _processingSubscription?: SubscriptionLike;
 
   constructor(context: vscode.ExtensionContext) {
     this._context = context;
@@ -29,10 +30,14 @@ export class Sidebar implements vscode.WebviewViewProvider {
     this._snapshotsSubscription = watchSnapshots().subscribe(() => {
       this.updateWebview();
     });
+    this._processingSubscription = watchIsProcessing().subscribe(() => {
+      this.updateWebview();
+    });
 
     webviewView.onDidDispose(() => {
       this._recordingSubscription?.unsubscribe();
       this._snapshotsSubscription?.unsubscribe();
+      this._processingSubscription?.unsubscribe();
     });
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
@@ -53,6 +58,28 @@ export class Sidebar implements vscode.WebviewViewProvider {
   private getHtmlForWebview(): string {
     const isRecording = getIsRecording();
     const snapshots = getSnapshots();
+    const isProcessing = getIsProcessing();
+
+    let headerHtml = '';
+    if (isProcessing) {
+      headerHtml = `
+        <div class="monkeydo-loading">
+          <span class="monkeydo-spinner"></span> Processing...
+        </div>
+      `;
+    } else if (isRecording) {
+      headerHtml = `
+        <button class="monkeydo-btn" id="monkeydo-action-btn">
+          Finish Recording
+        </button>
+      `;
+    } else {
+      headerHtml = `
+        <button class="monkeydo-btn" id="monkeydo-action-btn">
+          Start Recording
+        </button>
+      `;
+    }
 
     let summaryHtml = '';
     if (isRecording && snapshots.length > 0) {
@@ -141,12 +168,34 @@ export class Sidebar implements vscode.WebviewViewProvider {
         white-space: pre;
         color: var(--vscode-editor-foreground);
       }
+
+      .monkeydo-loading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px;
+        color: var(--vscode-descriptionForeground);
+        font-size: var(--vscode-font-size);
+      }
+
+      .monkeydo-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--vscode-descriptionForeground);
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        display: inline-block;
+        animation: monkeydo-spin 1s linear infinite;
+      }
+
+      @keyframes monkeydo-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
       </style>
 
       <div class="monkeydo-header">
-        <button class="monkeydo-btn" id="monkeydo-action-btn">
-          ${isRecording ? 'Finish Recording' : 'Start Recording'}
-        </button>
+        ${headerHtml}
       </div>
 
       ${summaryHtml}

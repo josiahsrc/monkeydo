@@ -5,6 +5,7 @@ import { handleFileChange, startRecording, stopRecording } from './recording';
 import { buildWorkflowContent } from './workflow';
 import { debugLog } from './utility';
 import { Sidebar } from './sidebar';
+import { setIsProcessing } from './state';
 
 export function activate(context: vscode.ExtensionContext) {
   debugLog('MonkeyDo extension is now active!');
@@ -19,8 +20,9 @@ export function activate(context: vscode.ExtensionContext) {
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('monkeydo.stopRecording', async () => {
+    setIsProcessing(true);
     const snapshots = stopRecording();
-    const content = await buildWorkflowContent({ snapshots });
+    const content = await buildWorkflowContent({ snapshots }).finally(() => setIsProcessing(false));
     if (!content) {
       vscode.window.showInformationMessage('No changes recorded.');
       return;
