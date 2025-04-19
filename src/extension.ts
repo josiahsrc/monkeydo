@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { handleFileChange, handleTerminalExecutionEnd, handleTerminalExecutionStart, startRecording, stopRecording } from './recording';
+import { handleFileAction, handleFileChange, handleTerminalExecutionEnd, handleTerminalExecutionStart, startRecording, stopRecording } from './recording';
 import { buildWorkflowDocument } from './workflow';
 import { debugLog, getMonkeyDoFolder } from './utility';
 import { SidebarView } from './views';
@@ -52,6 +52,36 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(async (event) => {
     handleFileChange(event);
+  }));
+
+  context.subscriptions.push(vscode.workspace.onDidCreateFiles(async (event) => {
+    event.files.forEach((file) => {
+      const filePath = file.fsPath;
+      handleFileAction({
+        action: 'create',
+        file: filePath,
+      });
+    });
+  }));
+
+  context.subscriptions.push(vscode.workspace.onDidDeleteFiles(async (event) => {
+    event.files.forEach((file) => {
+      const filePath = file.fsPath;
+      handleFileAction({
+        action: 'delete',
+        file: filePath,
+      });
+    });
+  }));
+
+  context.subscriptions.push(vscode.workspace.onDidRenameFiles(async (event) => {
+    event.files.forEach((file) => {
+      handleFileAction({
+        action: 'rename',
+        file: file.newUri.fsPath,
+        oldFile: file.oldUri.fsPath,
+      });
+    });
   }));
 
   context.subscriptions.push(vscode.window.onDidStartTerminalShellExecution(async (event) => {

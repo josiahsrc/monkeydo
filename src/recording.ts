@@ -1,7 +1,7 @@
 import * as Diff from 'diff';
 import * as vscode from 'vscode';
 import { clearSnapshots, getIsRecording, getSnapshots, pushSnapshot, setIsRecording } from './state';
-import { Snapshot } from './types';
+import { FileActionSnapshot, Snapshot } from './types';
 import { debugLog, getContentBeforeChange } from './utility';
 
 let currFile: string | null = null;
@@ -92,6 +92,19 @@ export const handleTerminalExecutionEnd = (event: vscode.TerminalShellExecutionE
     type: 'terminalCommand',
     command: event.execution.commandLine.value,
     cwd: event.execution.cwd?.path,
+  });
+};
+
+export const handleFileAction = (args: Omit<FileActionSnapshot, 'type'>) => {
+  if (!getIsRecording()) {
+    return;
+  }
+
+  debugLog("file action", args.action, args.file);
+  flushSnapshot();
+  pushSnapshot({
+    type: 'fileAction',
+    ...args,
   });
 };
 

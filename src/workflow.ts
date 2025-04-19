@@ -43,11 +43,17 @@ are short and to the point.
         Diff:
         ${snapshot.diff}
       `);
-    } else {
+    } else if (snapshot.type === 'terminalCommand') {
       chat.push(`
         Why did the user run this command next?
         Command: ${snapshot.command}
         CWD: ${snapshot.cwd ?? ''}
+      `);
+    } else {
+      chat.push(`
+        Why did the user ${snapshot.action} this file next?
+        File: ${snapshot.file}
+        Old file: ${snapshot.oldFile ?? ''}
       `);
     }
 
@@ -66,7 +72,7 @@ ${reasonForChange}
 ${snapshot.diff}
 \`\`\`
 `);
-    } else {
+    } else if (snapshot.type === 'terminalCommand') {
       sections.push(`
 ## Terminal Command
 
@@ -76,10 +82,16 @@ ${reasonForChange}
 ${snapshot.command}
 \`\`\`
 `);
+    } else {
+      sections.push(`
+## ${snapshot.action.charAt(0).toUpperCase() + snapshot.action.slice(1)} ${snapshot.file}
+
+${reasonForChange}
+`);
     }
   }
 
-  const summary = await chat.push(`In summary, what did all these changes accomplish? Why did they do all this?`).ask();
+  const summary = await chat.push(`In summary, what did all these changes accomplish? Why did they do all this? Your answer should be in the form of a single paragraph.`).ask();
   debugLog("purpose", summary);
   if (!summary) {
     return null;

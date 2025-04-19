@@ -91,6 +91,11 @@ export class SidebarView implements vscode.WebviewViewProvider {
             `<div class='monkeydo-diff-line'>${l.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
           ).join('');
           return `<div class='monkeydo-summary-item'><span class='monkeydo-filename'>${s.file}</span>${diffLines}</div>`;
+        } else if (s.type === 'fileAction') {
+          return `<div class='monkeydo-summary-item'>
+            <span class='monkeydo-filename'>${s.action.charAt(0).toUpperCase() + s.action.slice(1)} ${s.file}</span>
+            ${s.oldFile ? `<div class='monkeydo-diff-line'>Old file: ${s.oldFile}</div>` : ''}
+          </div>`;
         } else if (s.type === 'terminalCommand') {
           return `<div class='monkeydo-summary-item'>
             <span class='monkeydo-filename'>Terminal Command${s.cwd ? ` (in ${s.cwd})` : ''}</span>
@@ -98,7 +103,7 @@ export class SidebarView implements vscode.WebviewViewProvider {
           </div>`;
         }
         return '';
-          }).join('')}
+      }).join('')}
         </div>
       `;
     }
