@@ -4,9 +4,9 @@ import * as path from 'path';
 import { handleFileChange, startRecording, stopRecording } from './recording';
 import { buildWorkflowContent } from './workflow';
 import { debugLog } from './utility';
-import { SidebarView } from './views/sidebar.view';
+import { SidebarView } from './views';
 import { setIsProcessing } from './state';
-import { GetTutorialTool } from './tools/getTutorial.tool';
+import { GetTutorialTool } from './tools';
 
 export function activate(context: vscode.ExtensionContext) {
   debugLog('MonkeyDo extension is now active!');

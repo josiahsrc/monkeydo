@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { debugLog } from '../utility';
+import { debugLog } from './utility';
 
 type GetTutorialToolArgs = {
   task: string;

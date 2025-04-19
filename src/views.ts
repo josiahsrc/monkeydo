@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { SubscriptionLike } from 'rxjs';
-import { watchIsRecording, watchSnapshots, getIsRecording, getSnapshots, watchIsProcessing, getIsProcessing } from '../state';
+import { watchIsRecording, watchSnapshots, getIsRecording, getSnapshots, watchIsProcessing, getIsProcessing } from './state';
 
 export class SidebarView implements vscode.WebviewViewProvider {
   private _context: vscode.ExtensionContext;
