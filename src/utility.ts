@@ -166,6 +166,6 @@ export const clipMaxLines = (text: string, maxLines: number): string => {
     return text;
   }
 
-  const limitedText = lines.slice(0, maxLines).join('\n');
-  return `${limitedText}\n...`;
+  // Only return the first maxLines lines, no ellipsis
+  return lines.slice(0, maxLines).join('\n');
 };

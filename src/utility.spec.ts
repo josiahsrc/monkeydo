@@ -1,3 +1,21 @@
+import mockVscode from 'mock-require';
+
+mockVscode('vscode', {
+  window: {
+    createOutputChannel: () => ({ appendLine: () => { } }),
+  },
+  lm: {
+    selectChatModels: async () => [],
+  },
+  LanguageModelChatMessage: {
+    User: (msg: string) => ({ role: 'user', content: msg }),
+    Assistant: (msg: string) => ({ role: 'assistant', content: msg }),
+  },
+  LanguageModelTextPart: function (value: string) { throw new Error('Not implemented'); },
+  LanguageModelToolResult: function (parts: any[]) { throw new Error('Not implemented'); },
+  workspace: {},
+});
+
 import { clipMaxLines, getContentBeforeChange } from './utility';
 import { equal } from "assert";
 
