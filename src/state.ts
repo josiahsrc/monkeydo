@@ -16,3 +16,8 @@ const isProcessing$ = new BehaviorSubject<boolean>(false);
 export const getIsProcessing = () => isProcessing$.value;
 export const watchIsProcessing = () => isProcessing$.asObservable();
 export const setIsProcessing = (value: boolean) => isProcessing$.next(value);
+
+const progress$ = new BehaviorSubject<number>(0);
+export const getProgress = () => progress$.value;
+export const watchProgress = () => progress$.asObservable();
+export const setProgress = (value: number) => progress$.next(value);

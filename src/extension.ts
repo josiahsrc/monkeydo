@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { handleFileChange, startRecording, stopRecording } from './recording';
-import { buildWorkflowContent } from './workflow';
+import { buildWorkflowDocument } from './workflow';
 import { debugLog } from './utility';
 import { SidebarView } from './views';
 import { setIsProcessing } from './state';
@@ -22,8 +22,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('monkeydo.stopRecording', async () => {
     setIsProcessing(true);
     const snapshots = stopRecording();
-    const content = await buildWorkflowContent({ snapshots }).finally(() => setIsProcessing(false));
-    if (!content) {
+    const document = await buildWorkflowDocument({ snapshots }).finally(() => setIsProcessing(false));
+    if (!document) {
       vscode.window.showInformationMessage('No changes recorded.');
       return;
     }
@@ -31,11 +31,11 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage('Monkey Do recording stopped!');
     const saveUri = await vscode.window.showSaveDialog({
       title: 'Save Monkey Do action log',
-      defaultUri: vscode.Uri.file(path.join((vscode.workspace.workspaceFolders?.[0].uri.fsPath || ''), `monkeydo-actions-${Date.now()}.md`)),
+      defaultUri: vscode.Uri.file(path.join((vscode.workspace.workspaceFolders?.[0].uri.fsPath || ''), document.filename)),
       filters: { 'Markdown Files': ['md'], 'All Files': ['*'] }
     });
     if (saveUri) {
-      fs.writeFileSync(saveUri.fsPath, content);
+      fs.writeFileSync(saveUri.fsPath, document.content);
       vscode.window.showInformationMessage('Monkey Do action log saved.');
     }
   }));

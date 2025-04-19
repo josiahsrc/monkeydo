@@ -1,11 +1,17 @@
+import { setProgress } from "./state";
 import { Snapshot } from "./types";
 import { ChatBuilder, debugLog } from './utility';
 
-type BuildWorkflowContentArgs = {
+type BuildWorkflowDocumentArgs = {
   snapshots: Snapshot[];
 }
 
-export const buildWorkflowContent = async ({ snapshots }: BuildWorkflowContentArgs): Promise<string | null> => {
+type BuildWorkflowDocumentResult = {
+  content: string;
+  filename: string;
+}
+
+export const buildWorkflowDocument = async ({ snapshots }: BuildWorkflowDocumentArgs): Promise<BuildWorkflowDocumentResult | null> => {
   if (snapshots.length === 0) {
     return null;
   }
@@ -20,11 +26,15 @@ You are learning how things are done at your new job. Your task
 is to summarize diffs in a way that would help you accomplish similar
 tasks in the future. You are not a code reviewer, so you should not
 focus on code quality or correctness. You should focus on the
-intent of the change and how it was accomplished.
+intent of the change and how it was accomplished. Your answers
+are short and to the point.
   `);
 
   const sections: string[] = [];
-  for (const snapshot of snapshots) {
+  for (let i = 0; i < snapshots.length; i++) {
+    const snapshot = snapshots[i];
+    setProgress(i / snapshots.length);
+
     debugLog("asking why the user changed this", snapshot.file);
     chat.push(`
 Why did they make these changes next?
@@ -63,5 +73,24 @@ ${summary}
 ${sections.join('\n---\n')}
   `;
 
-  return document.trim();
+  const content = document.trim();
+
+  const nameBuilder = await ChatBuilder.create();
+  if (!nameBuilder) {
+    return null;
+  }
+
+  const fallbackFileName = `monkeydo-actions-${Date.now()}.md`;
+  const suggestedName = await nameBuilder.push(`
+    What would be a good name for this document? Use the markdown file form. E.g. how_to_do_something.md. Output the file name on one single line.
+    ${content}
+  `).ask();
+
+  const filename = suggestedName?.trim() || fallbackFileName;
+
+  setProgress(1);
+  return {
+    content,
+    filename,
+  };
 };

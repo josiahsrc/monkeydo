@@ -31,6 +31,22 @@ export const debugLog = (...entries: unknown[]) => {
   channel.appendLine(msg);
 };
 
+const getChatModel = async (): Promise<vscode.LanguageModelChat | null> => {
+  const models = await vscode.lm.selectChatModels({
+    vendor: 'copilot',
+    family: 'gpt-4o',
+  });
+
+  if (models.length === 0) {
+    debugLog("No chat models found");
+    return null;
+  }
+
+  const model = models[0];
+  debugLog("Selected chat model:", model.id);
+  return model;
+};
+
 export class ChatBuilder {
   private messages: vscode.LanguageModelChatMessage[] = [];
   private model: vscode.LanguageModelChat;
@@ -40,16 +56,13 @@ export class ChatBuilder {
   }
 
   static async create(): Promise<ChatBuilder | null> {
-    const models = await vscode.lm.selectChatModels({
-      vendor: 'copilot'
-    });
-
-    if (models.length === 0) {
+    const model = await getChatModel();
+    if (!model) {
       debugLog("No chat models found");
       return null;
     }
 
-    return new ChatBuilder(models[0]);
+    return new ChatBuilder(model);
   }
 
   clear(): this {
@@ -64,9 +77,9 @@ export class ChatBuilder {
     return this;
   }
 
-  async ask(): Promise<string> {
+  async ask(token?: vscode.CancellationToken): Promise<string> {
     debugLog("asking AI with", this.messages.length, "messages");
-    const response = await this.model.sendRequest(this.messages);
+    const response = await this.model.sendRequest(this.messages, {}, token);
 
     let content = '';
     for await (const chunk of response.text) {
