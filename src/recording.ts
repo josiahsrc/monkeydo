@@ -1,13 +1,13 @@
-import * as vscode from 'vscode';
 import * as Diff from 'diff';
-import { BehaviorSubject } from 'rxjs';
+import * as vscode from 'vscode';
+import { clearSnapshots, getIsRecording, getSnapshots, pushSnapshot, setIsRecording } from './state';
 import { Snapshot } from './types';
 import { debugLog, getContentBeforeChange } from './utility';
-import { clearSnapshots, getIsRecording, getSnapshots, pushSnapshot, setIsRecording } from './state';
 
 let currFile: string | null = null;
 let currStartContent: string | null = null;
 let currEndContent: string | null = null;
+let isCommandRunning = false;
 
 const takeSnapshot = (): Snapshot => {
   const oldContent = currStartContent ?? '';
@@ -17,6 +17,7 @@ const takeSnapshot = (): Snapshot => {
   const diff = Diff.createPatch(path, oldContent, newContent);
 
   return {
+    type: 'fileDiff',
     file: path,
     diff: diff,
   };
@@ -32,8 +33,23 @@ const updateSnapshot = (event: vscode.TextDocumentChangeEvent) => {
   currEndContent = event.document.getText();
 };
 
+const flushSnapshot = () => {
+  if (currFile && currStartContent !== currEndContent) {
+    debugLog("flushing snapshot for", currFile);
+    pushSnapshot(takeSnapshot());
+    currFile = null;
+    currStartContent = null;
+    currEndContent = null;
+  }
+};
+
 export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
   if (!getIsRecording()) {
+    return;
+  }
+
+  if (isCommandRunning) {
+    debugLog("command is running, skipping file changes to ignore generated code");
     return;
   }
 
@@ -55,14 +71,28 @@ export const handleFileChange = (event: vscode.TextDocumentChangeEvent) => {
   }
 };
 
-const flushSnapshot = () => {
-  if (currFile && currStartContent !== currEndContent) {
-    debugLog("flushing snapshot for", currFile);
-    pushSnapshot(takeSnapshot());
-    currFile = null;
-    currStartContent = null;
-    currEndContent = null;
+export const handleTerminalExecutionStart = (event: vscode.TerminalShellExecutionStartEvent) => {
+  isCommandRunning = true;
+  if (!getIsRecording()) {
+    return;
   }
+
+  debugLog("command started", event.execution.commandLine.value);
+  flushSnapshot();
+};
+
+export const handleTerminalExecutionEnd = (event: vscode.TerminalShellExecutionEndEvent) => {
+  isCommandRunning = false;
+  if (!getIsRecording()) {
+    return;
+  }
+
+  debugLog("command ended", event.execution.commandLine.value);
+  pushSnapshot({
+    type: 'terminalCommand',
+    command: event.execution.commandLine.value,
+    cwd: event.execution.cwd?.path,
+  });
 };
 
 export const startRecording = () => {

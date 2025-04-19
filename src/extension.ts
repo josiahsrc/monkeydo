@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { handleFileChange, startRecording, stopRecording } from './recording';
+import { handleFileChange, handleTerminalExecutionEnd, handleTerminalExecutionStart, startRecording, stopRecording } from './recording';
 import { buildWorkflowDocument } from './workflow';
 import { debugLog, getMonkeyDoFolder } from './utility';
 import { SidebarView } from './views';
@@ -54,6 +54,13 @@ export function activate(context: vscode.ExtensionContext) {
     handleFileChange(event);
   }));
 
+  context.subscriptions.push(vscode.window.onDidStartTerminalShellExecution(async (event) => {
+    handleTerminalExecutionStart(event);
+  }));
+
+  context.subscriptions.push(vscode.window.onDidEndTerminalShellExecution(async (event) => {
+    handleTerminalExecutionEnd(event);
+  }));
 }
 
 export function deactivate() { }

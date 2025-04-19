@@ -86,11 +86,19 @@ export class SidebarView implements vscode.WebviewViewProvider {
       summaryHtml = `
         <div class="monkeydo-summary-list">
           ${[...snapshots].reverse().map(s => {
-        const diffLines = s.diff.split('\n').slice(0, 6).map(l =>
-          `<div class='monkeydo-diff-line'>${l.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
-        ).join('');
-        return `<div class='monkeydo-summary-item'><span class='monkeydo-filename'>${s.file}</span>${diffLines}</div>`;
-      }).join('')}
+        if (s.type === 'fileDiff') {
+          const diffLines = s.diff.split('\n').slice(0, 6).map(l =>
+            `<div class='monkeydo-diff-line'>${l.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
+          ).join('');
+          return `<div class='monkeydo-summary-item'><span class='monkeydo-filename'>${s.file}</span>${diffLines}</div>`;
+        } else if (s.type === 'terminalCommand') {
+          return `<div class='monkeydo-summary-item'>
+            <span class='monkeydo-filename'>Terminal Command${s.cwd ? ` (in ${s.cwd})` : ''}</span>
+            <div class='monkeydo-diff-line'>${s.command.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          </div>`;
+        }
+        return '';
+          }).join('')}
         </div>
       `;
     }

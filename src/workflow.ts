@@ -35,20 +35,29 @@ are short and to the point.
     const snapshot = snapshots[i];
     setProgress(i / snapshots.length);
 
-    debugLog("asking why the user changed this", snapshot.file);
-    chat.push(`
-Why did they make these changes next?
-File: ${snapshot.file}
-Diff:
-${snapshot.diff}
-    `);
+    debugLog("asking why the user changed this", snapshot);
+    if (snapshot.type === 'fileDiff') {
+      chat.push(`
+        Why did the user change this file next?
+        File: ${snapshot.file}
+        Diff:
+        ${snapshot.diff}
+      `);
+    } else {
+      chat.push(`
+        Why did the user run this command next?
+        Command: ${snapshot.command}
+        CWD: ${snapshot.cwd ?? ''}
+      `);
+    }
 
     const reasonForChange = await chat.ask();
     if (!reasonForChange) {
       return null;
     }
 
-    sections.push(`
+    if (snapshot.type === 'fileDiff') {
+      sections.push(`
 ## ${snapshot.file}
 
 ${reasonForChange}
@@ -56,7 +65,18 @@ ${reasonForChange}
 \`\`\`diff
 ${snapshot.diff}
 \`\`\`
-    `);
+`);
+    } else {
+      sections.push(`
+## Terminal Command
+
+${reasonForChange}
+
+\`\`\`
+${snapshot.command}
+\`\`\`
+`);
+    }
   }
 
   const summary = await chat.push(`In summary, what did all these changes accomplish? Why did they do all this?`).ask();

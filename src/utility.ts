@@ -29,7 +29,21 @@ export const debugLog = (...entries: unknown[]) => {
     channel = vscode.window.createOutputChannel('MonkeyDo');
   }
 
-  const joined = entries.map((e) => `${e}`).join(' ');
+  const fmt = (entry: unknown): string => {
+    if (typeof entry === 'string') {
+      return entry;
+    } else if (typeof entry === 'object') {
+      try {
+        return JSON.stringify(entry, null, 2);
+      } catch (e) {
+        return `${entry}`;
+      }
+    } else {
+      return `${entry}`;
+    }
+  }
+
+  const joined = entries.map(fmt).join(' ');
   const msg = `[${new Date().toLocaleTimeString()}] ${joined}`;
   channel.appendLine(msg);
 };
