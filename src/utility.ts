@@ -37,7 +37,6 @@ export const debugLog = (...entries: unknown[]) => {
 const getChatModel = async (): Promise<vscode.LanguageModelChat | null> => {
   const models = await vscode.lm.selectChatModels({
     vendor: 'copilot',
-    family: 'gpt-4o',
   });
 
   if (models.length === 0) {
@@ -49,6 +48,8 @@ const getChatModel = async (): Promise<vscode.LanguageModelChat | null> => {
   debugLog("Selected chat model:", model.id);
   return model;
 };
+
+export type ToolInput<Input> = { input: Input, name: string };
 
 export class ChatBuilder {
   private messages: vscode.LanguageModelChatMessage[] = [];
@@ -94,6 +95,29 @@ export class ChatBuilder {
 
     return content;
   }
+
+  async askWithTools<T>(args: {
+    token?: vscode.CancellationToken;
+    tools: vscode.LanguageModelChatTool[];
+    handle: (args: ToolInput<T>) => Promise<void>;
+  }): Promise<void> {
+    debugLog("asking AI with tools", this.messages.length, "messages");
+    const response = await this.model.sendRequest(this.messages, {
+      tools: args.tools,
+      toolMode: vscode.LanguageModelChatToolMode.Auto,
+    }, args.token);
+
+    for await (const part of response.stream) {
+      if (!(part instanceof vscode.LanguageModelToolCallPart)) {
+        continue;
+      }
+
+      await args.handle({
+        input: part.input as T,
+        name: part.name,
+      });
+    }
+  }
 }
 
 export const getWorkspaceFolder = (): string | null => {
@@ -129,6 +153,16 @@ export const convertToWorkspaceRelativePath = (filePath: string): string => {
 
   return relativePath;
 };
+
+export const convertToAbsolutePath = (filePath: string): string => {
+  const wsFolder = getWorkspaceFolder();
+  if (!wsFolder) {
+    return filePath;
+  }
+
+  const absolutePath = path.join(wsFolder, filePath);
+  return absolutePath;
+}
 
 export const readDocumentsInFolder = (folder: string, opts: { extensions?: string[] } = {}): Document[] => {
   const { extensions } = opts;

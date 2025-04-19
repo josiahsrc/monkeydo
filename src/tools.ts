@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { buildModelToolResult, ChatBuilder, clipMaxLines, convertToWorkspaceRelativePath, debugLog, getMonkeyDoFolder, readDocumentsInFolder } from './utility';
+import * as fs from 'fs';
+import { buildModelToolResult, ChatBuilder, clipMaxLines, convertToAbsolutePath, convertToWorkspaceRelativePath, debugLog, getMonkeyDoFolder, readDocumentsInFolder } from './utility';
 
 type FindWorkflowToolArgs = {
   task: string;
@@ -39,25 +40,84 @@ export class FindWorkflowTool implements vscode.LanguageModelTool<FindWorkflowTo
       }
 
       chat.push(`The user wants to accomplish the following task: ${options.input.task}`);
-      chat.push('Which workflow file should the user use to accomplish this task? Output the name of the workflow file you would use and why.');
+      chat.push('Which workflow file should the user use to accomplish this task?');
       for (const doc of docs) {
         chat.push(`
           Workflow file: ${convertToWorkspaceRelativePath(doc.path)}
           Content:
-          ${clipMaxLines(doc.content, 5)}
+          ${clipMaxLines(doc.content, 2)}
         `);
       }
 
-      const result = await chat.ask(token);
-      if (!result) {
-        resolve(buildModelToolResult(['Error: The monkey does not have any models to work with.']));
+      const filepaths = docs.map(doc => convertToWorkspaceRelativePath(doc.path));
+      chat.push('Output the path of the file you want to use. Your options are:');
+      chat.push(`\`\`\`json\n${JSON.stringify(filepaths, null, 2)}\n\`\`\``);
+
+      let fileToUse: string | null = null;
+      await chat.askWithTools({
+        token,
+        tools: [
+          {
+            name: 'choose_file',
+            description: 'Return the path of the workspace file that best satisfies the user request.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                filePath: {
+                  type: 'string',
+                  description: 'The path to the file that should be used',
+                  default: ''
+                }
+              },
+              required: ['filePath']
+            }
+          },
+        ],
+        handle: async ({ input, name }) => {
+          if (name !== 'choose_file') {
+            debugLog("FindWorkflowTool: Unknown tool name", name);
+            return;
+          }
+
+          const value = input as { filePath: string };
+          if (!value.filePath) {
+            debugLog("FindWorkflowTool: No file path found in the input");
+            return;
+          }
+
+          fileToUse = convertToAbsolutePath(value.filePath);
+          debugLog("FindWorkflowTool: Handler called with file path", value.filePath);
+        },
+      });
+
+      debugLog("FindWorkflowTool: File to use:", fileToUse);
+      if (!fileToUse) {
+        debugLog("FindWorkflowTool: No file to use found");
+        resolve(buildModelToolResult(["Error: No workflow file found that would satisfy the user's request. The user must record a workflow."]));
         return;
       }
 
-      debugLog("FindWorkflowTool result:", result);
+      let fileContent: string | null = null;
+      try {
+        fileContent = fs.readFileSync(fileToUse, 'utf-8');
+      } catch (err) {
+        debugLog("FindWorkflowTool: Error reading file", fileToUse, err);
+        resolve(buildModelToolResult([`Error: Could not read the workflow file in ${fileToUse}.`]));
+        return;
+      }
+
+      if (!fileContent) {
+        debugLog("FindWorkflowTool: No content found in the file", fileToUse);
+        resolve(buildModelToolResult([`Error: The workflow file in ${fileToUse} is empty.`]));
+        return;
+      }
+
+      debugLog("FindWorkflowTool read file:", clipMaxLines(fileContent, 2));
       resolve(buildModelToolResult([
-        result,
-        "Add this workflow to your context and get to work",
+        "Use this workflow to accomplish the task:",
+        `\`\`\`markdown`,
+        fileContent,
+        `\`\`\``,
       ]));
     });
   }
