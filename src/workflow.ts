@@ -80,13 +80,51 @@ ${sections.join('\n---\n')}
     return null;
   }
 
-  const fallbackFileName = `monkeydo-actions-${Date.now()}.md`;
-  const suggestedName = await nameBuilder.push(`
-    What would be a good name for this document? Use the markdown file form. E.g. how_to_do_something.md. Output the file name on one single line.
-    ${content}
-  `).ask();
+  nameBuilder.push(`
+    What would be a good name for this document? Use the markdown file form. E.g. how_to_do_something.md.
 
-  const filename = suggestedName?.trim() || fallbackFileName;
+    ${summary}
+  `);
+
+  let suggestedName = '';
+  await nameBuilder.askWithTools({
+    token: undefined,
+    tools: [
+      {
+        name: 'file_name',
+        description: 'Return the name of the file that best satisfies the user request.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fileName: {
+              type: 'string',
+              description: 'Your recommendation of a name for the file that should be used',
+              default: ''
+            }
+          },
+          required: ['fileName']
+        }
+      },
+    ],
+    handle: async ({ input, name }) => {
+      if (name !== 'file_name') {
+        debugLog("BuildWorkflow: Unknown tool name", name);
+        return;
+      }
+
+      const value = input as { fileName: string };
+      if (!value.fileName) {
+        debugLog("BuildWorkflow: No file name found in the input");
+        return;
+      }
+
+      suggestedName = value.fileName;
+      debugLog("BuildWorkflow: Handler called with file name", value.fileName);
+    },
+  });
+
+  const fallbackFileName = `monkeydo-actions-${Date.now()}.md`;
+  const filename: string = suggestedName?.trim() || fallbackFileName;
 
   setProgress(1);
   return {

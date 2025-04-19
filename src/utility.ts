@@ -162,7 +162,7 @@ export const convertToAbsolutePath = (filePath: string): string => {
 
   const absolutePath = path.join(wsFolder, filePath);
   return absolutePath;
-}
+};
 
 export const readDocumentsInFolder = (folder: string, opts: { extensions?: string[] } = {}): Document[] => {
   const { extensions } = opts;
