@@ -113,7 +113,7 @@ ${sections.join('\n---\n')}
   }
 
   nameBuilder.push(`
-    What would be a good name for this document? Use the markdown file form. E.g. how_to_do_something.md.
+    What would be a good name for this document? Use the markdown file form. E.g. how_to_do_something.md. Make sure to label the file as "how to do x"
 
     ${summary}
   `);
