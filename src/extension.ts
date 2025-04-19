@@ -3,15 +3,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { handleFileChange, startRecording, stopRecording } from './recording';
 import { buildWorkflowDocument } from './workflow';
-import { debugLog } from './utility';
+import { debugLog, getMonkeyDoFolder } from './utility';
 import { SidebarView } from './views';
 import { setIsProcessing } from './state';
-import { GetTutorialTool } from './tools';
+import { FindWorkflowTool } from './tools';
 
 export function activate(context: vscode.ExtensionContext) {
   debugLog('MonkeyDo extension is now active!');
 
-  context.subscriptions.push(vscode.lm.registerTool("monkeydo-getTutorial", new GetTutorialTool()));
+  context.subscriptions.push(vscode.lm.registerTool("monkeydo-findWorkflow", new FindWorkflowTool()));
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('monkeydoView', new SidebarView(context)));
 
   context.subscriptions.push(vscode.commands.registerCommand('monkeydo.startRecording', () => {
@@ -28,22 +28,20 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    const wsFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!wsFolder) {
-      vscode.window.showErrorMessage('No workspace folder found. Please open a workspace folder.');
+    const folder = getMonkeyDoFolder();
+    if (!folder) {
+      vscode.window.showErrorMessage('No workflow files found in the .monkeydo folder');
       return;
     }
 
-    // create the .monkeydo folder if it doesn't already exist
-    const monkeydoFolder = path.join(wsFolder.uri.fsPath, '.monkeydo');
-    if (!fs.existsSync(monkeydoFolder)) {
-      fs.mkdirSync(monkeydoFolder);
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder);
     }
 
     vscode.window.showInformationMessage('Monkey Do recording stopped!');
     const saveUri = await vscode.window.showSaveDialog({
       title: 'Save Monkey Do action log',
-      defaultUri: vscode.Uri.file(path.join(monkeydoFolder, document.filename)),
+      defaultUri: vscode.Uri.file(path.join(folder, document.filename)),
       filters: { 'Markdown Files': ['md'], 'All Files': ['*'] }
     });
     if (saveUri) {

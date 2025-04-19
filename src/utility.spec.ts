@@ -1,4 +1,4 @@
-import { getContentBeforeChange } from './utility';
+import { clipMaxLines, getContentBeforeChange } from './utility';
 import { equal } from "assert";
 
 describe('getContentBeforeChange', () => {
@@ -48,5 +48,29 @@ describe('getContentBeforeChange', () => {
       ],
     } as any);
     equal(actual, 'Hi Universe');
+  });
+});
+
+describe('clipMaxLines', () => {
+  it('clips to max lines', () => {
+    const text = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5';
+    const maxLines = 3;
+    const expected = 'Line 1\nLine 2\nLine 3';
+    const actual = clipMaxLines(text, maxLines);
+    equal(actual, expected);
+  });
+
+  it('does not clip if within limit', () => {
+    const text = 'Line 1\nLine 2\nLine 3';
+    const maxLines = 5;
+    const actual = clipMaxLines(text, maxLines);
+    equal(actual, text);
+  });
+
+  it('returns empty string for empty input', () => {
+    const text = '';
+    const maxLines = 3;
+    const actual = clipMaxLines(text, maxLines);
+    equal(actual, '');
   });
 });

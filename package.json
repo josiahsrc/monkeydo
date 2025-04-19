@@ -45,8 +45,8 @@
     ],
     "languageModelTools": [
       {
-        "name": "monkeydo-getTutorial",
-        "displayName": "MonkeyDo Get Tutorial",
+        "name": "monkeydo-findWorkflow",
+        "displayName": "MonkeyDo find workflow",
         "icon": "resources/monkeydo.svg",
         "tags": [
           "monkeydo"

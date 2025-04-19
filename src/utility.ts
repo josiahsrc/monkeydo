@@ -1,4 +1,7 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
+import { Document } from './types';
 
 let channel: vscode.OutputChannel | null = null;
 
@@ -92,3 +95,77 @@ export class ChatBuilder {
     return content;
   }
 }
+
+export const getWorkspaceFolder = (): string | null => {
+  const wsFolder = vscode.workspace.workspaceFolders?.[0];
+  if (!wsFolder) {
+    debugLog("No workspace folder found");
+    return null;
+  }
+
+  return wsFolder.uri.fsPath;
+};
+
+export const getMonkeyDoFolder = (): string | null => {
+  const wsFolder = getWorkspaceFolder();
+  if (!wsFolder) {
+    return null;
+  }
+
+  return path.join(wsFolder, '.monkeydo');
+};
+
+export const convertToWorkspaceRelativePath = (filePath: string): string => {
+  const wsFolder = getWorkspaceFolder();
+  if (!wsFolder) {
+    return filePath;
+  }
+
+  const relativePath = path.relative(wsFolder, filePath);
+  if (relativePath.startsWith('..')) {
+    debugLog("File is outside the workspace folder:", filePath);
+    return filePath;
+  }
+
+  return relativePath;
+};
+
+export const readDocumentsInFolder = (folder: string, opts: { extensions?: string[] } = {}): Document[] => {
+  const { extensions } = opts;
+  const extSet = new Set(extensions || []);
+
+  if (!fs.existsSync(folder)) {
+    debugLog("Folder does not exist:", folder);
+    return [];
+  }
+
+  const files = fs.readdirSync(folder);
+
+  const docs: Document[] = [];
+  for (const file of files) {
+    const filePath = path.join(folder, file);
+    const stats = fs.statSync(filePath);
+
+    if (stats.isFile() && extSet.has(path.extname(file))) {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      docs.push({ path: filePath, filename: file, content });
+    }
+  }
+
+  return docs;
+};
+
+export const buildModelToolResult = (values: string[]): vscode.LanguageModelToolResult => {
+  const parts = values.map((value) => new vscode.LanguageModelTextPart(value));
+  return new vscode.LanguageModelToolResult(parts);
+};
+
+export const clipMaxLines = (text: string, maxLines: number): string => {
+  const lines = text.split('\n');
+  if (lines.length <= maxLines) {
+    return text;
+  }
+
+  const limitedText = lines.slice(0, maxLines).join('\n');
+  return `${limitedText}\n...`;
+};
