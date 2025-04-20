@@ -7,7 +7,7 @@ Monkey see, monkey do — Automate repetitive coding tasks with Copilot
 1. **Record** yourself performing a tedious, boilerplate-heavy task.
 2. **Replay** with `#monkeydo` in Copilot agent-mode to automate similar tasks.
 
-[![Watch the Preview](https://img.youtube.com/vi/Az_FVI_ic3Q/0.jpg)](https://youtu.be/Az_FVI_ic3Q)
+[![Watch the Preview](https://img.youtube.com/vi/-1kwB__kGMU/0.jpg)](https://youtu.be/-1kwB__kGMU)
 
 ## ✨ Features
 
