@@ -1,8 +1,16 @@
-# Monkey Do
+# 🐒 Monkey Do
 
-Automate redundant processes in your codebase with copilot. Monkey see, monkey do.
+Monkey see, monkey do — Automate repetitive coding tasks with Copilot
 
-## Features
+## 🚀 How It Works
 
-- Record yourself performing a redundant, boilerplate heavy task
-- Use `#monkeydo` in copilot agent-mode to apply that recording to a similar task you need to do
+1. **Record** yourself performing a tedious, boilerplate-heavy task.
+2. **Replay** with `#monkeydo` in Copilot agent-mode to automate similar tasks.
+
+[![Watch the Preview](https://img.youtube.com/vi/Az_FVI_ic3Q/0.jpg)](https://youtu.be/Az_FVI_ic3Q)
+
+## ✨ Features
+
+- ⏺️ **Record Actions:** Save your workflow as you work.
+- 🔁 **Reuse Steps:** Apply saved actions to similar tasks.
+- ⚡ **Reduce Repetition:** Automate routine coding tasks.
