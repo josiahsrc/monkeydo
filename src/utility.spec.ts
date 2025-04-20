@@ -1,6 +1,6 @@
-import mockVscode from 'mock-require';
+import mockRequire from 'mock-require';
 
-mockVscode('vscode', {
+mockRequire('vscode', {
   window: {
     createOutputChannel: () => ({ appendLine: () => { } }),
   },

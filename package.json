@@ -2,7 +2,10 @@
   "name": "monkeydo",
   "displayName": "Monkey Do",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "publisher": "josiahsrc",
+  "icon": "resources/monkeydo.png",
+  "repository": "https://github.com/josiahsrc/monkeydo",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -75,7 +78,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test:integration": "vscode-test",
-    "test:unit": "mocha --require ts-node/register 'src/**/*.spec.ts'"
+    "test:unit": "mocha --require ts-node/register 'src/**/*.spec.ts'",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/diff": "^7.0.2",
@@ -87,6 +91,7 @@
     "@typescript-eslint/parser": "^8.28.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.3.2",
     "eslint": "^9.23.0",
     "mocha": "^11.1.0",
     "mock-require": "^3.0.3",
